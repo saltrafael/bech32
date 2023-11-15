@@ -27,18 +27,13 @@ class Bech32Codec extends Codec<Bech32, String> {
 // This class converts a Bech32 class instance to a String.
 class Bech32Encoder extends Converter<Bech32, String> with Bech32Validations {
   @override
-  String convert(Bech32 input,
-      [int maxLength = Bech32Validations.maxInputLength]) {
+  String convert(Bech32 input, [int maxLength = Bech32Validations.maxInputLength]) {
     var hrp = input.hrp;
     var data = input.data;
 
-    if (hrp.length +
-            data.length +
-            separator.length +
-            Bech32Validations.checksumLength >
+    if (hrp.length + data.length + separator.length + Bech32Validations.checksumLength >
         maxLength) {
-      throw TooLong(
-          hrp.length + data.length + 1 + Bech32Validations.checksumLength);
+      throw TooLong(hrp.length + data.length + 1 + Bech32Validations.checksumLength);
     }
 
     if (hrp.isEmpty) {
@@ -55,7 +50,7 @@ class Bech32Encoder extends Converter<Bech32, String> with Bech32Validations {
 
     hrp = hrp.toLowerCase();
 
-    var checksummed = data + _createChecksum(hrp, data);
+    var checksummed = data + createChecksum(hrp, data);
 
     if (hasOutOfBoundsChars(checksummed)) {
       // TODO this could be more informative
@@ -69,8 +64,7 @@ class Bech32Encoder extends Converter<Bech32, String> with Bech32Validations {
 // This class converts a String to a Bech32 class instance.
 class Bech32Decoder extends Converter<String, Bech32> with Bech32Validations {
   @override
-  Bech32 convert(String input,
-      [int maxLength = Bech32Validations.maxInputLength]) {
+  Bech32 convert(String input, [int maxLength = Bech32Validations.maxInputLength]) {
     if (input.length > maxLength) {
       throw TooLong(input.length);
     }
@@ -96,10 +90,9 @@ class Bech32Decoder extends Converter<String, Bech32> with Bech32Validations {
     input = input.toLowerCase();
 
     var hrp = input.substring(0, separatorPosition);
-    var data = input.substring(
-        separatorPosition + 1, input.length - Bech32Validations.checksumLength);
-    var checksum =
-        input.substring(input.length - Bech32Validations.checksumLength);
+    var data =
+        input.substring(separatorPosition + 1, input.length - Bech32Validations.checksumLength);
+    var checksum = input.substring(input.length - Bech32Validations.checksumLength);
 
     if (hasOutOfRangeHrpCharacters(hrp)) {
       throw OutOfRangeHrpCharacters(hrp);
@@ -149,6 +142,10 @@ class Bech32Validations {
 
   bool isInvalidChecksum(String hrp, List<int> data, List<int> checksum) {
     return !_verifyChecksum(hrp, data + checksum);
+  }
+
+  List<int> createChecksum(String hrp, List<int> data) {
+    return _createChecksum(hrp, data);
   }
 
   bool isMixedCase(String input) {
@@ -244,6 +241,11 @@ List<int> _hrpExpand(String hrp) {
 
 bool _verifyChecksum(String hrp, List<int> dataIncludingChecksum) {
   return _polymod(_hrpExpand(hrp) + dataIncludingChecksum) == 1;
+}
+
+int bech32PolymodCheck(String hrp, List<int> data) {
+  var values = _hrpExpand(hrp) + data + [0, 0, 0, 0, 0, 0];
+  return _polymod(values) ^ 1;
 }
 
 List<int> _createChecksum(String hrp, List<int> data) {

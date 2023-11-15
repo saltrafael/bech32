@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'bech32.dart';
+import 'bech32m.dart';
 import 'exceptions.dart';
 
 /// An instance of the default implementation of the SegwitCodec
@@ -16,8 +17,8 @@ class SegwitCodec extends Codec<Segwit, String> {
   SegwitEncoder get encoder => SegwitEncoder();
 
   @override
-  String encode(Segwit data) {
-    return SegwitEncoder().convert(data);
+  String encode(Segwit data, {bool? isBech32m}) {
+    return SegwitEncoder().convert(data, isBech32m: isBech32m);
   }
 
   @override
@@ -29,7 +30,7 @@ class SegwitCodec extends Codec<Segwit, String> {
 /// This class converts a Segwit class instance to a String.
 class SegwitEncoder extends Converter<Segwit, String> with SegwitValidations {
   @override
-  String convert(Segwit input) {
+  String convert(Segwit input, {bool? isBech32m, int? maxLength}) {
     var version = input.version;
     var program = input.program;
 
@@ -46,13 +47,16 @@ class SegwitEncoder extends Converter<Segwit, String> with SegwitValidations {
     }
 
     if (isWrongVersion0Program(version, program)) {
-      throw InvalidProgramLength(
-          'version $version invalid with length ${program.length}');
+      throw InvalidProgramLength('version $version invalid with length ${program.length}');
     }
 
     var data = _convertBits(program, 8, 5, true);
 
-    return bech32.encode(Bech32(input.hrp, [version] + data));
+    if (isBech32m == true) {
+      return bech32m.encode(Bech32(input.hrp, [version] + data));
+    } else {
+      return bech32.encode(Bech32(input.hrp, [version] + data));
+    }
   }
 }
 
@@ -87,8 +91,7 @@ class SegwitDecoder extends Converter<String, Segwit> with SegwitValidations {
     }
 
     if (isWrongVersion0Program(version, program)) {
-      throw InvalidProgramLength(
-          'version $version invalid with length ${program.length}');
+      throw InvalidProgramLength('version $version invalid with length ${program.length}');
     }
 
     return Segwit(decoded.hrp, version, program);
