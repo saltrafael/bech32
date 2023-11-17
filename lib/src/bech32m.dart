@@ -119,7 +119,7 @@ class Bech32MDecoder extends Bech32Decoder with Bech32MValidations {
     if (chk != (0x2bc830a3)) {
       throw Exception('Invalid checksum for $input');
     }
-    return Bech32(prefix, [words[0], ...fromWords(Uint8List.fromList(words.sublist(1)))]);
+    return Bech32(prefix, words);
   }
 }
 

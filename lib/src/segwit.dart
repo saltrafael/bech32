@@ -22,8 +22,8 @@ class SegwitCodec extends Codec<Segwit, String> {
   }
 
   @override
-  Segwit decode(String data) {
-    return SegwitDecoder().convert(data);
+  Segwit decode(String data, {bool? isBech32m}) {
+    return SegwitDecoder().convert(data, isBech32m: isBech32m);
   }
 }
 
@@ -63,8 +63,13 @@ class SegwitEncoder extends Converter<Segwit, String> with SegwitValidations {
 /// This class converts a String to a Segwit class instance.
 class SegwitDecoder extends Converter<String, Segwit> with SegwitValidations {
   @override
-  Segwit convert(String input) {
-    var decoded = bech32.decode(input);
+  Segwit convert(String input, {bool? isBech32m}) {
+    Bech32? decoded;
+    if (isBech32m == true) {
+      decoded = bech32m.decode(input);
+    } else {
+      decoded = bech32.decode(input);
+    }
 
     if (isInvalidHrp(decoded.hrp)) {
       throw InvalidHrp();
